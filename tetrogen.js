@@ -80,6 +80,8 @@ function tetromino()
     this.rotation = tetromino.rotation.up;
     this.x = 0;
     this.y = 0;
+    this.width = 0;
+    this.height = 0;
 };
 tetromino.prototype.decodeSquaresString = function(squaresString)
 {
@@ -133,6 +135,8 @@ function tLLeft()
     this.id = tetromino.globalId;
     tetromino.globalId += 1;
     this.color = 'red';
+    this.width = 2;
+    this.height = 3;
 };
 tLLeft.prototype.squares = function()
 {
@@ -150,6 +154,8 @@ function tLRight()
     this.id = tetromino.globalId;
     tetromino.globalId += 1;
     this.color = 'orange';
+    this.width = 2;
+    this.height = 3;
 };
 tLRight.prototype.squares = function()
 {
@@ -167,6 +173,8 @@ function tZigLeft()
     this.id = tetromino.globalId;
     tetromino.globalId += 1;
     this.color = 'yellow';
+    this.width = 3;
+    this.height = 2;
 };
 tZigLeft.prototype.squares = function()
 {
@@ -184,6 +192,8 @@ function tZigRight()
     this.id = tetromino.globalId;
     tetromino.globalId += 1;
     this.color = 'green';
+    this.width = 3;
+    this.height = 2;
 };
 tZigRight.prototype.squares = function()
 {
@@ -201,6 +211,8 @@ function tT()
     this.id = tetromino.globalId;
     tetromino.globalId += 1;
     this.color = 'blue';
+    this.width = 3;
+    this.height = 1;
 };
 tT.prototype.squares = function()
 {
@@ -218,6 +230,8 @@ function tLine()
     this.id = tetromino.globalId;
     tetromino.globalId += 1;
     this.color = 'gray';
+    this.width = 1;
+    this.height = 4;
 };
 tLine.prototype.squares = function()
 {
@@ -235,6 +249,8 @@ function tSquare()
     this.id = tetromino.globalId;
     tetromino.globalId += 1;
     this.color = 'pink';
+    this.width = 2;
+    this.height = 2;
 };
 tSquare.prototype.squares = function()
 {
@@ -253,6 +269,7 @@ function surface(width, height)
     this._canvas = document.getElementById('canvas');
     this._context = canvas.getContext('2d');
 
+    this.actualTetrominos = [];
     this.tetrominos = {};
     this.grid = {};
 
@@ -261,13 +278,6 @@ function surface(width, height)
 
     this.spritemap = null;
 };
-surface.prototype.loadSpritemap = function(path, width, height)
-{
-    var img = new Image()
-    img.src="img_flwr.png";
-    // img.onload = function() { 
-    // cxt.drawImage(img,0,0);
-}
 surface.prototype.actualCoord = function(pair)
 {
     pair[0] = pair[0].mod(this.width);
@@ -310,6 +320,7 @@ surface.prototype.addTetromino = function(tetromino)
         }
 
         this.tetrominos[tetromino.hashKey()] = actualCoords;
+        this.actualTetrominos.push(tetromino);
 
         // TODO: until I add textures
         // tetromino.color = "rgba(" + rand(0, 256) + "," + rand(0, 256) + "," + rand(0, 256) + ", 1)";
@@ -328,6 +339,7 @@ surface.prototype.delTetromino = function(tetromino)
     }
 
     delete this.tetrominos[tetromino.hashKey()];
+    delete this.actualTetrominos[tetromino];
 };
 surface.prototype.hasTetromino = function(pair)
 {
@@ -350,26 +362,101 @@ surface.prototype.drawSquare = function(size, pair, color)
     this._context.fillStyle = color;
     this._context.fillRect(x * size[0], actualY, size[0], size[1]);
 };
+surface.prototype.drawTetromino = function(singleTileSize, offset, tetromino)
+{
+    var spritemapWidth = this.spritemap.width / 16;
+    var spritemapHeight = this.spritemap.height / 4;
+
+    var widthMultiplier = 2;
+    var heightMultiplier = 3;
+
+    // var x = tetromino.x + offset[0];
+    // var y = tetromino.y + offset[1];
+    var x = 0 + offset[0];
+    var y = 0 + offset[1];
+    
+    var actualX = x * singleTileSize[0];
+    var actualY = this._canvas.height - ((y + 3) * (singleTileSize[1]));
+
+    // TODO: compare actual classes
+    // if (getObjectClass(tetromino) == "tLLeft")
+    // {
+        var angle = 0;
+
+        if (angle >= 0.25)
+        {
+
+        }
+
+        var xOffset = 0;
+        var yOffset = 0;
+
+        // var xOffset = this._canvas.height;
+        // var yOffset = this._canvas.height - singleTileSize[1] * heightMultiplier;
+
+        // var xOffset = 0 + singleTileSize[0] * widthMultiplier;
+        // var yOffset = this._canvas.height * 2 - singleTileSize[1] * heightMultiplier;
+
+        // var xOffset = -this._canvas.width + singleTileSize[0] * widthMultiplier;
+        // var yOffset = this._canvas.height;
+
+        this._context.rotate(-2 * Math.PI * angle);
+        this._context.translate(-xOffset, -yOffset);
+
+        this._context.drawImage(
+            this.spritemap, 0, spritemapHeight, spritemapWidth * 2, spritemapHeight * heightMultiplier,
+            actualX, actualY, singleTileSize[0] * widthMultiplier, singleTileSize[1] * heightMultiplier);
+        pr(singleTileSize);
+
+        this._context.translate(xOffset, yOffset);
+        this._context.rotate(2 * Math.PI * angle);
+    // }
+};
 surface.prototype.draw = function(offset, percentage)
 {
     offset = typeof offset !== 'undefined' ? offset : [0,0];
     percentage = typeof percentage !== 'undefined' ? percentage : 1.0;
 
-    for (var pair in this.grid)
+    var actualSquareWidth = this._canvas.width / this.width * percentage;
+    var actualSquareHeight = this._canvas.height / this.height * percentage;
+
+    if (!this.spritemap)
     {
-        // TODO: bleh
-        numPair = pair.split(',');
-        numPair[0] = parseInt(numPair[0]);
-        numPair[1] = parseInt(numPair[1]);
+        pr("Rendering with color and percentage = " + percentage);
+        for (var pair in this.grid)
+        {
+            // TODO: bleh
+            var numPair = pair.split(',');
+            numPair[0] = parseInt(numPair[0]);
+            numPair[1] = parseInt(numPair[1]);
 
-        tetr = this.grid[pair];
-        color = tetr.color;
+            var tetr = this.grid[pair];
+            var color = tetr.color;
 
-        var actualSquareWidth = this._canvas.width / this.width * percentage;
-        var actualSquareHeight = this._canvas.height / this.height * percentage;
-
-        this.drawSquare([actualSquareWidth, actualSquareHeight], [numPair[0] + offset[0], numPair[1] + offset[1]], color);
+            this.drawSquare([actualSquareWidth, actualSquareHeight], [numPair[0] + offset[0], numPair[1] + offset[1]], color);
+        }
     }
+    else
+    {
+        pr("Rendering with texture and percentage = " + percentage);
+        for (var i in this.actualTetrominos)
+        {
+            this.drawTetromino([actualSquareWidth, actualSquareHeight], offset, this.actualTetrominos[i]);
+        }
+    }
+};
+surface.prototype.loadSpritemap = function(path)
+{
+    // TODO: lots of weird stuff in here
+    var img = new Image();
+    img.src = path;
+    var surfaceObj = this;
+    img.onload = function()
+    {
+        pr("Spritemap loaded with width: " + img.width + ", height: " + img.height);
+        surfaceObj.spritemap = img;
+        renderFinalImage(surfaceObj);
+    };
 };
 
 ///////////////////////
@@ -461,17 +548,19 @@ function addTetrominoState(tetrominoState, surface)
 
 function renderFinalImage(surface)
 {
-    surface.draw([surface.width * 0.5, surface.height * 0.5], 0.5);
-    surface.draw([surface.width * -0.5, surface.height * 0.5], 0.5);
-    surface.draw([surface.width * 1.5, surface.height * 0.5], 0.5);
+    surface.draw();
 
-    surface.draw([surface.width * 0.5, surface.height * 1.5], 0.5);
-    surface.draw([surface.width * -0.5, surface.height * 1.5], 0.5);
-    surface.draw([surface.width * 1.5, surface.height * 1.5], 0.5);
+    // surface.draw([surface.width * 0.5, surface.height * 0.5], 0.5);
+    // surface.draw([surface.width * -0.5, surface.height * 0.5], 0.5);
+    // surface.draw([surface.width * 1.5, surface.height * 0.5], 0.5);
 
-    surface.draw([surface.width * 0.5, surface.height * -0.5], 0.5);
-    surface.draw([surface.width * -0.5, surface.height * -0.5], 0.5);
-    surface.draw([surface.width * 1.5, surface.height * -0.5], 0.5);
+    // surface.draw([surface.width * 0.5, surface.height * 1.5], 0.5);
+    // surface.draw([surface.width * -0.5, surface.height * 1.5], 0.5);
+    // surface.draw([surface.width * 1.5, surface.height * 1.5], 0.5);
+
+    // surface.draw([surface.width * 0.5, surface.height * -0.5], 0.5);
+    // surface.draw([surface.width * -0.5, surface.height * -0.5], 0.5);
+    // surface.draw([surface.width * 1.5, surface.height * -0.5], 0.5);
 };
 
 function main(seed)
@@ -485,6 +574,7 @@ function main(seed)
 
     var debugIter = 0;
     var surf = new surface(8, 8);
+    surf.loadSpritemap("spritemap.png");
 
     var tetrominoStates = [];
     var shouldCreateNew = true;
@@ -536,4 +626,5 @@ function main(seed)
     renderFinalImage(surf);
 };
 
-main();
+// TODO: fix seed
+main(1.7768866336076115e+308);
