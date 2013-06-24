@@ -290,7 +290,6 @@ surface.prototype.addTetromino = function(tetromino)
     // wtf stop it what are you doing
     if (this.tetrominos[tetromino.hashKey()])
     {
-        // pr("tetromino already exists: " + tetromino.hashKey());
         return false;
     }
 
@@ -377,8 +376,6 @@ surface.prototype.drawTetromino = function(singleTileSize, offset, tetr)
         tLine : 13,
         tSquare : 14
     }
-
-    pr(tetr);
 
     var spritemapOffset = spritemapOffsets[getObjectClass(tetr)];
 
@@ -589,17 +586,30 @@ function renderFinalImage(surface)
 {
     // surface.draw();
 
-    surface.draw([surface.width * 0.5, surface.height * 0.5], 0.5);
-    surface.draw([surface.width * -0.5, surface.height * 0.5], 0.5);
-    surface.draw([surface.width * 1.5, surface.height * 0.5], 0.5);
+    var fraction = 0.25;
+    var itemsPerRow = 1/fraction;
 
-    surface.draw([surface.width * 0.5, surface.height * 1.5], 0.5);
-    surface.draw([surface.width * -0.5, surface.height * 1.5], 0.5);
-    surface.draw([surface.width * 1.5, surface.height * 1.5], 0.5);
+    for (var i = 0; i < itemsPerRow + 1; i += 1)
+    {
+        for (var j = 0; j < itemsPerRow + 1; j += 1)
+        {
+            var multiplieri = itemsPerRow/2 + (fraction - i) + 1;
+            var multiplierj = itemsPerRow/2 + (fraction - j) + 1;
+            surface.draw([surface.width * multiplieri, surface.height * multiplierj], fraction);
+        }
+    }
 
-    surface.draw([surface.width * 0.5, surface.height * -0.5], 0.5);
-    surface.draw([surface.width * -0.5, surface.height * -0.5], 0.5);
-    surface.draw([surface.width * 1.5, surface.height * -0.5], 0.5);
+    // surface.draw([surface.width * 0.5, surface.height * 0.5], 0.5);
+    // surface.draw([surface.width * -0.5, surface.height * 0.5], 0.5);
+    // surface.draw([surface.width * 1.5, surface.height * 0.5], 0.5);
+
+    // surface.draw([surface.width * 0.5, surface.height * 1.5], 0.5);
+    // surface.draw([surface.width * -0.5, surface.height * 1.5], 0.5);
+    // surface.draw([surface.width * 1.5, surface.height * 1.5], 0.5);
+
+    // surface.draw([surface.width * 0.5, surface.height * -0.5], 0.5);
+    // surface.draw([surface.width * -0.5, surface.height * -0.5], 0.5);
+    // surface.draw([surface.width * 1.5, surface.height * -0.5], 0.5);
 };
 
 function main(seed)
@@ -613,7 +623,7 @@ function main(seed)
 
     var debugIter = 0;
     var surf = new surface(8, 8);
-    surf.loadSpritemap("spritemap.png");
+    surf.loadSpritemap("spritemap-dirty.png");
 
     var tetrominoStates = [];
     var shouldCreateNew = true;
@@ -666,4 +676,4 @@ function main(seed)
 };
 
 // TODO: fix seed
-main(1.7768866336076115e+308);
+main();
