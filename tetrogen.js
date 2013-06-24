@@ -327,21 +327,20 @@ surface.prototype.hasTetromino = function(pair)
         return false;
     }
 };
-surface.prototype.drawSquare = function(pair, color)
+surface.prototype.drawSquare = function(size, pair, color)
 {
     var x = pair[0];
     var y = pair[1];
 
-    var actualSquareWidth = this._canvas.width / this.width;
-    var actualSquareHeight = this._canvas.height / this.height;
-    var actualY = this._canvas.height - ((y + 1) * actualSquareHeight);
+    var actualY = this._canvas.height - ((y + 1) * size[1]);
 
     this._context.fillStyle = color;
-    this._context.fillRect(x * actualSquareWidth, actualY, actualSquareWidth, actualSquareHeight);
+    this._context.fillRect(x * size[0], actualY, size[0], size[1]);
 };
-surface.prototype.draw = function(offset)
+surface.prototype.draw = function(offset, percentage)
 {
     offset = typeof offset !== 'undefined' ? offset : [0,0];
+    percentage = typeof percentage !== 'undefined' ? percentage : 1.0;
 
     for (var pair in this.grid)
     {
@@ -352,7 +351,11 @@ surface.prototype.draw = function(offset)
 
         tetr = this.grid[pair];
         color = tetr.color;
-        this.drawSquare([numPair[0] + offset[0], numPair[1] + offset[1]], color);
+
+        var actualSquareWidth = this._canvas.width / this.width * percentage;
+        var actualSquareHeight = this._canvas.height / this.height * percentage;
+
+        this.drawSquare([actualSquareWidth, actualSquareHeight], [numPair[0] + offset[0], numPair[1] + offset[1]], color);
     }
 };
 
@@ -379,7 +382,7 @@ function createNewTetrominoState(pair)
     return tetrominoState;
 };
 
-// TODO: scramble each rand array for each iteration
+// TODO: replace with an actual algorithm, like maybe A*
 function addTetrominoState(tetrominoState, surface)
 {
     var x = tetrominoState.gridX;
@@ -453,6 +456,21 @@ function addTetrominoState(tetrominoState, surface)
     return false;
 };
 
+function renderFinalImage(surface)
+{
+    surface.draw([surface.width * 0.5, surface.height * 0.5], 0.5);
+    surface.draw([surface.width * -0.5, surface.height * 0.5], 0.5);
+    surface.draw([surface.width * 1.5, surface.height * 0.5], 0.5);
+
+    surface.draw([surface.width * 0.5, surface.height * 1.5], 0.5);
+    surface.draw([surface.width * -0.5, surface.height * 1.5], 0.5);
+    surface.draw([surface.width * 1.5, surface.height * 1.5], 0.5);
+
+    surface.draw([surface.width * 0.5, surface.height * -0.5], 0.5);
+    surface.draw([surface.width * -0.5, surface.height * -0.5], 0.5);
+    surface.draw([surface.width * 1.5, surface.height * -0.5], 0.5);
+};
+
 function main()
 {
     var debugIter = 0;
@@ -479,7 +497,7 @@ function main()
                 if (debugIter >= 500)
                 {
                     pr("ERROR: hit iteration limit!");
-                    surf.draw();
+                    renderFinalImage(surf);
                     return;
                 }
 
@@ -488,7 +506,7 @@ function main()
                 if (tetrominoStates.length == 0)
                 {
                     pr("ERROR: popped all states!");
-                    surf.draw();
+                    renderFinalImage(surf);
                     return;
                 }
 
@@ -508,10 +526,7 @@ function main()
         }
     }
 
-    surf.draw();
-    // surf.draw([surf.width, 0]);
-    // surf.draw([0, surf.height]);
-    // surf.draw([surf.width, surf.height]);
+    renderFinalImage(surf);
 };
 
 main();
