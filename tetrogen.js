@@ -67,11 +67,16 @@ tetromino.rotation =
     left: 3
 };
 
+// TODO: double bleh, I need to figure out how to do class variables and/or proper hash keys in JS
+tetromino.globalId = 0;
+
 function tetromino()
 {
     this.rotation = tetromino.rotation.up;
     this.x = 0;
     this.y = 0;
+    this.id = tetromino.globalId;
+    tetromino.globalId += 1;
 };
 tetromino.prototype.decodeSquaresString = function(squaresString)
 {
@@ -114,7 +119,7 @@ tetromino.prototype.absSquares = function()
 };
 tetromino.prototype.hashKey = function()
 {
-    return getObjectClass(this) + "," + this.x + "," + this.y + "," + this.rotation;
+    return getObjectClass(this) + "-" + this.id;
 };
 
 tLLeft.prototype = new tetromino();
@@ -273,10 +278,11 @@ surface.prototype.addTetromino = function(tetromino)
 };
 surface.prototype.delTetromino = function(tetromino)
 {
-    for (var key in this.tetrominos[tetromino.hashKey()])
-    {
-        var pair = this.tetrominos[key];
+    var pairs = this.tetrominos[tetromino.hashKey()];
 
+    for (var i in pairs)
+    {
+        var pair = pairs[i];
         delete this.grid[pair];
     }
 
@@ -339,9 +345,6 @@ function createNewTetrominoState(pair)
         gridY : pair[1],
         tetr : null
     }
-    shuffle(tetrominoState.randClasses);
-    shuffle(tetrominoState.randRotations);
-    shuffle(tetrominoState.randSquares);
 
     return tetrominoState;
 };
@@ -352,31 +355,44 @@ function addTetrominoState(tetrominoState, surface)
     var x = tetrominoState.gridX;
     var y = tetrominoState.gridY;
     var resuming = (tetrominoState.tetr != null);
+    var debugWasResuming = resuming;
+
+    shuffle(tetrominoState.randClasses);
+    tetrominoState.classi = 0;
 
     for (; tetrominoState.classi < tetrominoState.randClasses.length; tetrominoState.classi += 1)
     {
-        if (!resuming)
-        {
+        // if (!resuming)
+        // {
             var randClass = tetrominoState.randClasses[tetrominoState.classi];
             tetrominoState.tetr = new randClass();
-        }
-        else
-        {
-            pr("resuming!!!");
-        }
+            shuffle(tetrominoState.randRotations);
+            tetrominoState.rotationi = 0;
+        // }
+        // else
+        // {
+        //     pr("resuming (" + tetrominoState.tetr.hashKey() + ") with " + tetrominoState.classi + ", " + tetrominoState.rotationi + ", " + tetrominoState.squarei);
+        // }
 
         for (; tetrominoState.rotationi < tetrominoState.randRotations.length; tetrominoState.rotationi += 1)
         {
-            if (!resuming)
-            {
+            // if (!resuming)
+            // {
                 var randRotation = tetrominoState.randRotations[tetrominoState.rotationi];
                 tetrominoState.tetr.rotation = randRotation;
-            }
+                shuffle(tetrominoState.randSquares);
+                tetrominoState.squarei = 0;
+            // }
 
-            resuming = false;
+            // resuming = false;
 
             for (; tetrominoState.squarei < tetrominoState.randSquares.length; tetrominoState.squarei += 1)
             {
+                // if (debugWasResuming)
+                // {
+                    pr("trying (" + tetrominoState.tetr.hashKey() + ") with " + tetrominoState.squarei + ", " + tetrominoState.rotationi + ", " + tetrominoState.classi);
+                // }
+
                 var randSquare = tetrominoState.randSquares[tetrominoState.squarei];
                 
                 var squares = tetrominoState.tetr.squares();
@@ -394,6 +410,7 @@ function addTetrominoState(tetrominoState, surface)
                 {
                     if (surface.addTetromino(tetrominoState.tetr))
                     {
+                        pr("success!!!!!");
                         return true;
                     }
                 }
@@ -401,6 +418,7 @@ function addTetrominoState(tetrominoState, surface)
         }
     }
 
+    pr("failure :(");
     return false;
 };
 
@@ -421,7 +439,7 @@ function main()
                 continue;
             }
 
-            if (shouldCreateNew)
+            if (true)//shouldCreateNew)
             {
                 tetrominoStates.push(createNewTetrominoState([x,y]));
             }
