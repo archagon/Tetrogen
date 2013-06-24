@@ -299,7 +299,7 @@ surface.prototype.addTetromino = function(tetromino)
         this.tetrominos[tetromino.hashKey()] = actualCoords;
 
         // TODO: until I add textures
-        tetromino.color = "rgba(" + rand(0, 256) + "," + rand(0, 256) + "," + rand(0, 256) + ", 1)";
+        // tetromino.color = "rgba(" + rand(0, 256) + "," + rand(0, 256) + "," + rand(0, 256) + ", 1)";
     }
 
     return accepted;
@@ -388,7 +388,6 @@ function addTetrominoState(tetrominoState, surface)
     var x = tetrominoState.gridX;
     var y = tetrominoState.gridY;
     var resuming = (tetrominoState.tetr != null);
-    var debugWasResuming = resuming;
 
     if (!resuming)
     {
@@ -405,10 +404,6 @@ function addTetrominoState(tetrominoState, surface)
             shuffle(tetrominoState.randRotations);
             tetrominoState.rotationi = 0;
         }
-        // else
-        // {
-        //     pr("resuming (" + tetrominoState.tetr.hashKey() + ") with " + tetrominoState.classi + ", " + tetrominoState.rotationi + ", " + tetrominoState.squarei);
-        // }
 
         for (; tetrominoState.rotationi < tetrominoState.randRotations.length; tetrominoState.rotationi += 1)
         {
@@ -424,11 +419,6 @@ function addTetrominoState(tetrominoState, surface)
 
             for (; tetrominoState.squarei < tetrominoState.randSquares.length; tetrominoState.squarei += 1)
             {
-                // if (debugWasResuming)
-                // {
-                    // pr("trying (" + tetrominoState.tetr.hashKey() + ") with " + tetrominoState.squarei + ", " + tetrominoState.rotationi + ", " + tetrominoState.classi);
-                // }
-
                 var randSquare = tetrominoState.randSquares[tetrominoState.squarei];
                 
                 var squares = tetrominoState.tetr.squares();
