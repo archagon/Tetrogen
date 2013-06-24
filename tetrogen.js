@@ -244,7 +244,7 @@ tSquare.prototype.squares = function()
 // SURFACE CLASS //
 ///////////////////
 
-function surface(squareWidth, width, height)
+function surface(width, height)
 {
     this._canvas = document.getElementById('canvas');
     this._context = canvas.getContext('2d');
@@ -252,7 +252,6 @@ function surface(squareWidth, width, height)
     this.tetrominos = {};
     this.grid = {};
 
-    this.squareWidth = squareWidth;
     this.width = width;
     this.height = height;
 };
@@ -333,10 +332,12 @@ surface.prototype.drawSquare = function(pair, color)
     var x = pair[0];
     var y = pair[1];
 
-    var actualY = this._canvas.height - ((y + 1) * this.squareWidth);
+    var actualSquareWidth = this._canvas.width / this.width;
+    var actualSquareHeight = this._canvas.height / this.height;
+    var actualY = this._canvas.height - ((y + 1) * actualSquareHeight);
 
     this._context.fillStyle = color;
-    this._context.fillRect(x * this.squareWidth, actualY, this.squareWidth, this.squareWidth);
+    this._context.fillRect(x * actualSquareWidth, actualY, actualSquareWidth, actualSquareHeight);
 };
 surface.prototype.draw = function(offset)
 {
@@ -386,18 +387,21 @@ function addTetrominoState(tetrominoState, surface)
     var resuming = (tetrominoState.tetr != null);
     var debugWasResuming = resuming;
 
-    shuffle(tetrominoState.randClasses);
-    tetrominoState.classi = 0;
+    if (!resuming)
+    {
+        shuffle(tetrominoState.randClasses);
+        tetrominoState.classi = 0;
+    }
 
     for (; tetrominoState.classi < tetrominoState.randClasses.length; tetrominoState.classi += 1)
     {
-        // if (!resuming)
-        // {
+        if (!resuming)
+        {
             var randClass = tetrominoState.randClasses[tetrominoState.classi];
             tetrominoState.tetr = new randClass();
             shuffle(tetrominoState.randRotations);
             tetrominoState.rotationi = 0;
-        // }
+        }
         // else
         // {
         //     pr("resuming (" + tetrominoState.tetr.hashKey() + ") with " + tetrominoState.classi + ", " + tetrominoState.rotationi + ", " + tetrominoState.squarei);
@@ -405,15 +409,15 @@ function addTetrominoState(tetrominoState, surface)
 
         for (; tetrominoState.rotationi < tetrominoState.randRotations.length; tetrominoState.rotationi += 1)
         {
-            // if (!resuming)
-            // {
+            if (!resuming)
+            {
                 var randRotation = tetrominoState.randRotations[tetrominoState.rotationi];
                 tetrominoState.tetr.rotation = randRotation;
                 shuffle(tetrominoState.randSquares);
                 tetrominoState.squarei = 0;
-            // }
+            }
 
-            // resuming = false;
+            resuming = false;
 
             for (; tetrominoState.squarei < tetrominoState.randSquares.length; tetrominoState.squarei += 1)
             {
@@ -452,7 +456,7 @@ function addTetrominoState(tetrominoState, surface)
 function main()
 {
     var debugIter = 0;
-    var surf = new surface(16, 8, 8);
+    var surf = new surface(8, 8);
 
     var tetrominoStates = [];
     var shouldCreateNew = true;
@@ -466,7 +470,7 @@ function main()
                 continue;
             }
 
-            if (true)//shouldCreateNew)
+            if (shouldCreateNew)
             {
                 tetrominoStates.push(createNewTetrominoState([x,y]));
             }
@@ -494,7 +498,6 @@ function main()
                 x = prevTetromino.gridX;
                 y = prevTetromino.gridY;
 
-                pr("back to " + x + ", " + y);
                 debugIter += 1;
             }
 
@@ -506,12 +509,9 @@ function main()
     }
 
     surf.draw();
-    surf.draw([surf.width, 0]);
-    surf.draw([0, surf.height]);
-    surf.draw([surf.width, surf.height]);
-
-    pr(surf.grid);
-    pr(surf.tetrominos);
+    // surf.draw([surf.width, 0]);
+    // surf.draw([0, surf.height]);
+    // surf.draw([surf.width, surf.height]);
 };
 
 main();
