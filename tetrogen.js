@@ -362,55 +362,92 @@ surface.prototype.drawSquare = function(size, pair, color)
     this._context.fillStyle = color;
     this._context.fillRect(x * size[0], actualY, size[0], size[1]);
 };
-surface.prototype.drawTetromino = function(singleTileSize, offset, tetromino)
+surface.prototype.drawTetromino = function(singleTileSize, offset, tetr)
 {
+    // TODO: make these static
     var spritemapWidth = this.spritemap.width / 16;
     var spritemapHeight = this.spritemap.height / 4;
+    var spritemapOffsets =
+    {
+        tLLeft : 0,
+        tLRight : 2,
+        tZigLeft : 4,
+        tZigRight : 7,
+        tT : 10,
+        tLine : 13,
+        tSquare : 14
+    }
 
-    var widthMultiplier = 2;
-    var heightMultiplier = 3;
+    var spritemapOffset = spritemapOffsets[getObjectClass(tetr)];
 
-    // var x = tetromino.x + offset[0];
-    // var y = tetromino.y + offset[1];
-    var x = 0 + offset[0];
-    var y = 0 + offset[1];
-    
+    var x = tetr.x + offset[0];
+    var y = tetr.y + offset[1];
+
+    var fractionAngle;
+
+    if (tetr.rotation == tetromino.rotation.up)
+    {
+        fractionAngle = 0;
+    }
+    else if (tetr.rotation == tetromino.rotation.right)
+    {
+        fractionAngle = 0.25;
+    }
+    else if (tetr.rotation == tetromino.rotation.down)
+    {
+        fractionAngle = 0.50;
+    }
+    else
+    {
+        fractionAngle = 0.75;
+    }
+
+    var angle = 2 * Math.PI * fractionAngle;
+
     var actualX = x * singleTileSize[0];
-    var actualY = this._canvas.height - ((y + 3) * (singleTileSize[1]));
+    var actualY = this._canvas.height - (y * singleTileSize[1]) - (tetr.height * singleTileSize[1]);
 
-    // TODO: compare actual classes
-    // if (getObjectClass(tetromino) == "tLLeft")
-    // {
-        var angle = 0;
+    var yAdjustment;
+    var xAdjustment;
+    
+    if (fractionAngle < 0.25)
+    {
+        xAdjustment = 0;
+        yAdjustment = 0;
+    }
+    else if (fractionAngle < 0.5)
+    {
+        xAdjustment = 0;
+        yAdjustment = tetr.width * singleTileSize[1];
+    }
+    else if (fractionAngle < 0.75)
+    {
+        xAdjustment = tetr.width * singleTileSize[0];
+        yAdjustment = tetr.height * singleTileSize[1];
+    }
+    else
+    {
+        xAdjustment = tetr.height * singleTileSize[0];
+        yAdjustment = 0;
+    }
 
-        if (angle >= 0.25)
-        {
+    this._context.save();
 
-        }
+    this._context.translate(actualX + xAdjustment, actualY + singleTileSize[1] * tetr.height - yAdjustment);
+    this._context.rotate(angle);
 
-        var xOffset = 0;
-        var yOffset = 0;
+    var tileSizeMultiplier = Math.abs(Math.sin(angle));
+    var rotatedSingleTileSize = [((1 - tileSizeMultiplier) * singleTileSize[0] + tileSizeMultiplier * singleTileSize[1]),
+                                 ((1 - tileSizeMultiplier) * singleTileSize[1] + tileSizeMultiplier * singleTileSize[0])];
+    var rotatedTileWidth = rotatedSingleTileSize[0] * tetr.width;
+    var rotatedTileHeight = rotatedSingleTileSize[1] * tetr.height;
 
-        // var xOffset = this._canvas.height;
-        // var yOffset = this._canvas.height - singleTileSize[1] * heightMultiplier;
+    this._context.drawImage(
+        this.spritemap,
+        spritemapWidth * spritemapOffset, spritemapHeight, spritemapWidth * tetr.width, spritemapHeight * tetr.height,
+        0, -rotatedTileHeight, rotatedTileWidth, rotatedTileHeight);
 
-        // var xOffset = 0 + singleTileSize[0] * widthMultiplier;
-        // var yOffset = this._canvas.height * 2 - singleTileSize[1] * heightMultiplier;
-
-        // var xOffset = -this._canvas.width + singleTileSize[0] * widthMultiplier;
-        // var yOffset = this._canvas.height;
-
-        this._context.rotate(-2 * Math.PI * angle);
-        this._context.translate(-xOffset, -yOffset);
-
-        this._context.drawImage(
-            this.spritemap, 0, spritemapHeight, spritemapWidth * 2, spritemapHeight * heightMultiplier,
-            actualX, actualY, singleTileSize[0] * widthMultiplier, singleTileSize[1] * heightMultiplier);
-        pr(singleTileSize);
-
-        this._context.translate(xOffset, yOffset);
-        this._context.rotate(2 * Math.PI * angle);
-    // }
+    this._context.restore();
 };
 surface.prototype.draw = function(offset, percentage)
 {
