@@ -212,7 +212,7 @@ function tT()
     tetromino.globalId += 1;
     this.color = 'blue';
     this.width = 3;
-    this.height = 1;
+    this.height = 2;
 };
 tT.prototype.squares = function()
 {
@@ -269,7 +269,7 @@ function surface(width, height)
     this._canvas = document.getElementById('canvas');
     this._context = canvas.getContext('2d');
 
-    this.actualTetrominos = [];
+    this.tetrominoObjects = {};
     this.tetrominos = {};
     this.grid = {};
 
@@ -320,10 +320,10 @@ surface.prototype.addTetromino = function(tetromino)
         }
 
         this.tetrominos[tetromino.hashKey()] = actualCoords;
-        this.actualTetrominos.push(tetromino);
+        this.tetrominoObjects[tetromino.hashKey()] = tetromino;
 
         // TODO: until I add textures
-        // tetromino.color = "rgba(" + rand(0, 256) + "," + rand(0, 256) + "," + rand(0, 256) + ", 1)";
+        tetromino.color = "rgba(" + rand(0, 256) + "," + rand(0, 256) + "," + rand(0, 256) + ", 1)";
     }
 
     return accepted;
@@ -339,7 +339,7 @@ surface.prototype.delTetromino = function(tetromino)
     }
 
     delete this.tetrominos[tetromino.hashKey()];
-    delete this.actualTetrominos[tetromino];
+    delete this.tetrominoObjects[tetromino.hashKey()];
 };
 surface.prototype.hasTetromino = function(pair)
 {
@@ -377,6 +377,8 @@ surface.prototype.drawTetromino = function(singleTileSize, offset, tetr)
         tLine : 13,
         tSquare : 14
     }
+
+    pr(tetr);
 
     var spritemapOffset = spritemapOffsets[getObjectClass(tetr)];
 
@@ -444,7 +446,7 @@ surface.prototype.drawTetromino = function(singleTileSize, offset, tetr)
 
     this._context.drawImage(
         this.spritemap,
-        spritemapWidth * spritemapOffset, spritemapHeight, spritemapWidth * tetr.width, spritemapHeight * tetr.height,
+        spritemapWidth * spritemapOffset, (4 - tetr.height) * spritemapHeight, spritemapWidth * tetr.width, spritemapHeight * tetr.height,
         0, -rotatedTileHeight, rotatedTileWidth, rotatedTileHeight);
 
     this._context.restore();
@@ -476,9 +478,9 @@ surface.prototype.draw = function(offset, percentage)
     else
     {
         pr("Rendering with texture and percentage = " + percentage);
-        for (var i in this.actualTetrominos)
+        for (var key in this.tetrominoObjects)
         {
-            this.drawTetromino([actualSquareWidth, actualSquareHeight], offset, this.actualTetrominos[i]);
+            this.drawTetromino([actualSquareWidth, actualSquareHeight], offset, this.tetrominoObjects[key]);
         }
     }
 };
@@ -585,19 +587,19 @@ function addTetrominoState(tetrominoState, surface)
 
 function renderFinalImage(surface)
 {
-    surface.draw();
+    // surface.draw();
 
-    // surface.draw([surface.width * 0.5, surface.height * 0.5], 0.5);
-    // surface.draw([surface.width * -0.5, surface.height * 0.5], 0.5);
-    // surface.draw([surface.width * 1.5, surface.height * 0.5], 0.5);
+    surface.draw([surface.width * 0.5, surface.height * 0.5], 0.5);
+    surface.draw([surface.width * -0.5, surface.height * 0.5], 0.5);
+    surface.draw([surface.width * 1.5, surface.height * 0.5], 0.5);
 
-    // surface.draw([surface.width * 0.5, surface.height * 1.5], 0.5);
-    // surface.draw([surface.width * -0.5, surface.height * 1.5], 0.5);
-    // surface.draw([surface.width * 1.5, surface.height * 1.5], 0.5);
+    surface.draw([surface.width * 0.5, surface.height * 1.5], 0.5);
+    surface.draw([surface.width * -0.5, surface.height * 1.5], 0.5);
+    surface.draw([surface.width * 1.5, surface.height * 1.5], 0.5);
 
-    // surface.draw([surface.width * 0.5, surface.height * -0.5], 0.5);
-    // surface.draw([surface.width * -0.5, surface.height * -0.5], 0.5);
-    // surface.draw([surface.width * 1.5, surface.height * -0.5], 0.5);
+    surface.draw([surface.width * 0.5, surface.height * -0.5], 0.5);
+    surface.draw([surface.width * -0.5, surface.height * -0.5], 0.5);
+    surface.draw([surface.width * 1.5, surface.height * -0.5], 0.5);
 };
 
 function main(seed)
