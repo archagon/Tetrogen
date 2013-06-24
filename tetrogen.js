@@ -68,6 +68,7 @@ tetromino.rotation =
 };
 
 // TODO: double bleh, I need to figure out how to do class variables and/or proper hash keys in JS
+// TODO: also need to figure out chained constructors
 tetromino.globalId = 0;
 
 function tetromino()
@@ -75,8 +76,6 @@ function tetromino()
     this.rotation = tetromino.rotation.up;
     this.x = 0;
     this.y = 0;
-    this.id = tetromino.globalId;
-    tetromino.globalId += 1;
 };
 tetromino.prototype.decodeSquaresString = function(squaresString)
 {
@@ -127,6 +126,8 @@ tLLeft.prototype.constructor = tLLeft;
 tLLeft.superclass = tetromino.prototype;
 function tLLeft()
 {
+    this.id = tetromino.globalId;
+    tetromino.globalId += 1;
     this.color = 'red';
 };
 tLLeft.prototype.squares = function()
@@ -142,6 +143,8 @@ tLRight.prototype.constructor = tLRight;
 tLRight.superclass = tetromino.prototype;
 function tLRight()
 {
+    this.id = tetromino.globalId;
+    tetromino.globalId += 1;
     this.color = 'orange';
 };
 tLRight.prototype.squares = function()
@@ -157,6 +160,8 @@ tZigLeft.prototype.constructor = tZigLeft;
 tZigLeft.superclass = tetromino.prototype;
 function tZigLeft()
 {
+    this.id = tetromino.globalId;
+    tetromino.globalId += 1;
     this.color = 'yellow';
 };
 tZigLeft.prototype.squares = function()
@@ -172,6 +177,8 @@ tZigRight.prototype.constructor = tZigRight;
 tZigRight.superclass = tetromino.prototype;
 function tZigRight()
 {
+    this.id = tetromino.globalId;
+    tetromino.globalId += 1;
     this.color = 'green';
 };
 tZigRight.prototype.squares = function()
@@ -187,6 +194,8 @@ tT.prototype.constructor = tT;
 tT.superclass = tetromino.prototype;
 function tT()
 {
+    this.id = tetromino.globalId;
+    tetromino.globalId += 1;
     this.color = 'blue';
 };
 tT.prototype.squares = function()
@@ -202,6 +211,8 @@ tLine.prototype.constructor = tLine;
 tLine.superclass = tetromino.prototype;
 function tLine()
 {
+    this.id = tetromino.globalId;
+    tetromino.globalId += 1;
     this.color = 'gray';
 };
 tLine.prototype.squares = function()
@@ -210,6 +221,23 @@ tLine.prototype.squares = function()
     if (this.rotation == tetromino.rotation.right) { return this.decodeSquaresString("00 10 20 30"); }
     if (this.rotation == tetromino.rotation.down) { return this.decodeSquaresString("00 01 02 03"); }
     if (this.rotation == tetromino.rotation.left) { return this.decodeSquaresString("00 10 20 30"); }
+};
+
+tSquare.prototype = new tetromino();
+tSquare.prototype.constructor = tSquare;
+tSquare.superclass = tetromino.prototype;
+function tSquare()
+{
+    this.id = tetromino.globalId;
+    tetromino.globalId += 1;
+    this.color = 'pink';
+};
+tSquare.prototype.squares = function()
+{
+    if (this.rotation == tetromino.rotation.up) { return this.decodeSquaresString("00 10 11 01"); }
+    if (this.rotation == tetromino.rotation.right) { return this.decodeSquaresString("00 10 11 01"); }
+    if (this.rotation == tetromino.rotation.down) { return this.decodeSquaresString("00 10 11 01"); }
+    if (this.rotation == tetromino.rotation.left) { return this.decodeSquaresString("00 10 11 01"); }
 };
 
 ///////////////////
@@ -240,6 +268,7 @@ surface.prototype.addTetromino = function(tetromino)
     // wtf stop it what are you doing
     if (this.tetrominos[tetromino.hashKey()])
     {
+        // pr("tetromino already exists: " + tetromino.hashKey());
         return false;
     }
 
@@ -335,7 +364,7 @@ function createNewTetrominoState(pair)
     // this "struct" will be used to restore state when a match fails
     var tetrominoState =
     {
-        randClasses : [tLLeft, tLRight, tZigLeft, tZigRight, tT, tLine],
+        randClasses : [tLLeft, tLRight, tZigLeft, tZigRight, tT, tLine, tSquare],
         randRotations : [tetromino.rotation.up, tetromino.rotation.down, tetromino.rotation.left, tetromino.rotation.right],
         randSquares : [0, 1, 2, 3],
         classi : 0,
@@ -390,7 +419,7 @@ function addTetrominoState(tetrominoState, surface)
             {
                 // if (debugWasResuming)
                 // {
-                    pr("trying (" + tetrominoState.tetr.hashKey() + ") with " + tetrominoState.squarei + ", " + tetrominoState.rotationi + ", " + tetrominoState.classi);
+                    // pr("trying (" + tetrominoState.tetr.hashKey() + ") with " + tetrominoState.squarei + ", " + tetrominoState.rotationi + ", " + tetrominoState.classi);
                 // }
 
                 var randSquare = tetrominoState.randSquares[tetrominoState.squarei];
@@ -410,7 +439,6 @@ function addTetrominoState(tetrominoState, surface)
                 {
                     if (surface.addTetromino(tetrominoState.tetr))
                     {
-                        pr("success!!!!!");
                         return true;
                     }
                 }
@@ -418,7 +446,6 @@ function addTetrominoState(tetrominoState, surface)
         }
     }
 
-    pr("failure :(");
     return false;
 };
 
@@ -482,6 +509,9 @@ function main()
     surf.draw([surf.width, 0]);
     surf.draw([0, surf.height]);
     surf.draw([surf.width, surf.height]);
+
+    pr(surf.grid);
+    pr(surf.tetrominos);
 };
 
 main();
