@@ -1,3 +1,15 @@
+// TODO:
+// * import external js correctly
+// * improve algorithm
+// * jquery
+// * correct coordinate shifts/scales -- realtime?
+// * multiple threads
+// * generate image download link
+// * generate background automatically
+// * Amazon affiliate
+// * Google ads
+// * PayPal donate
+
 /* minified seedrandom.js by David Bau ; thank you very much! */
 
 (function(a,b,c,d,e,f){function k(a){var b,c=a.length,e=this,f=0,g=e.i=e.j=0,h=e.S=[];for(c||(a=[c++]);d>f;)h[f]=f++;for(f=0;d>f;f++)h[f]=h[g=j&g+a[f%c]+(b=h[f])],h[g]=b;(e.g=function(a){for(var b,c=0,f=e.i,g=e.j,h=e.S;a--;)b=h[f=j&f+1],c=c*d+h[j&(h[f]=h[g=j&g+b])+(h[g]=b)];return e.i=f,e.j=g,c})(d)}function l(a,b){var e,c=[],d=(typeof a)[0];if(b&&"o"==d)for(e in a)try{c.push(l(a[e],b-1))}catch(f){}return c.length?c:"s"==d?a:a+"\0"}function m(a,b){for(var d,c=a+"",e=0;c.length>e;)b[j&e]=j&(d^=19*b[j&e])+c.charCodeAt(e++);return o(b)}function n(c){try{return a.crypto.getRandomValues(c=new Uint8Array(d)),o(c)}catch(e){return[+new Date,a,a.navigator.plugins,a.screen,o(b)]}}function o(a){return String.fromCharCode.apply(0,a)}var g=c.pow(d,e),h=c.pow(2,f),i=2*h,j=d-1;c.seedrandom=function(a,f){var j=[],p=m(l(f?[a,o(b)]:0 in arguments?a:n(),3),j),q=new k(j);return m(o(q.S),b),c.random=function(){for(var a=q.g(e),b=g,c=0;h>a;)a=(a+c)*d,b*=d,c=q.g(1);for(;a>=i;)a/=2,b/=2,c>>>=1;return(a+c)/b},p},m(c.random(),b)})(this,[],Math,256,6,52);
@@ -7,6 +19,8 @@
 //////////////////////
 // HELPER FUNCTIONS //
 //////////////////////
+
+var debugIterMode = true; // use the right arrow key to move through the iterations one by one!
 
 function pr(string)
 {
@@ -23,7 +37,24 @@ function rand(minInclusive, maxExclusive)
     return Math.floor((Math.random() * maxExclusive) + minInclusive);
 };
 
-// stolen shamelessly from http://stackoverflow.com/questions/2450954/how-to-randomize-a-javascript-array
+// TODO: jQuery dat shit
+// TODO: only compares pairs
+function contains(array, item)
+{
+    for (var i in array)
+    {
+        arrayItem = array[i];
+
+        if (arrayItem[0] == item[0] && arrayItem[1] == item[1])
+        {
+            return true;
+        }
+    }
+
+    return false;
+};
+
+// Stolen shamelessly from http://stackoverflow.com/questions/2450954/how-to-randomize-a-javascript-array
 // because it's easier than thinking for 5 minutes!
 function shuffle(array)
 {
@@ -80,8 +111,8 @@ function tetromino()
     this.rotation = tetromino.rotation.up;
     this.x = 0;
     this.y = 0;
-    this.width = 0;
-    this.height = 0;
+    this.width = 0; // applies to default rotation
+    this.height = 0; // applies to default rotation
 };
 tetromino.prototype.decodeSquaresString = function(squaresString)
 {
@@ -107,24 +138,115 @@ tetromino.prototype.decodeSquaresString = function(squaresString)
 
     return outputArray;
 };
+tetromino.prototype.rotatedWidth = function()
+{
+    if (this.rotation == tetromino.rotation.up || this.rotation == tetromino.rotation.down)
+    {
+        return this.width;
+    }
+    else
+    {
+        return this.height;
+    }
+};
+tetromino.prototype.rotatedHeight = function()
+{
+    if (this.rotation == tetromino.rotation.up || this.rotation == tetromino.rotation.down)
+    {
+        return this.height;
+    }
+    else
+    {
+        return this.width;
+    }
+};
 tetromino.prototype.squares = function()
 {
     // I didn't feel like figuring the math out for the rotations, so I just encoded them manually
     return [];
 };
-tetromino.prototype.absSquares = function()
+tetromino.prototype.surroundingSquares = function() // TODO: this is super duper slow, but whatever
 {
     var squares = this.squares();
+    var surroundingSquaresSet = {};
+    var surroundingSquares = [];
+
     for (var i in squares)
     {
-        squares[i][0] += this.x;
-        squares[i][1] += this.y;
+        var squarePair = squares[i];
+
+        // check each tile around the tile in question
+        for (var xDiff = -1; xDiff <= 1; xDiff += 1)
+        {
+            for (var yDiff = -1; yDiff <= 1; yDiff += 1)
+            {
+                var diffPair = [squarePair[0]+xDiff, squarePair[1]+yDiff];
+
+                if (!contains(squares, diffPair))
+                {
+                    surroundingSquaresSet[diffPair] = true;
+                }
+            }
+        }
     }
-    return squares;
+
+    // Object.keys would be better, but it's only supported in modern browsers
+    for (var pair in surroundingSquaresSet)
+    {
+        surroundingSquares.push([pair[0], pair[1]]);
+    }
+
+    pr("Surrounding squares: " + surroundingSquares);
+    return surroundingSquares;
+};
+// tetromino.prototype.areaSquares = function() // TODO: rename
+// {
+//     var outputArray = [];
+
+//     for (var x = -1; x < this.rotatedWidth()+1; x += 1)
+//     {
+//         for (var y = -1; y < this.rotatedHeight()+1; y += 1)
+//         {
+//             outputArray.push([x, y]);
+//         }
+//     }
+
+//     return outputArray;
+// };
+// tetromino.prototype.areaEmptySquares = function() // TODO: inefficient and dumb, maybe fix later
+// {
+//     var outputArray = [];
+//     var squares = this.squares();
+//     var areaSquares = this.areaSquares();
+
+//     for (var i in areaSquares)
+//     {
+//         pair = areaSquares[i];
+
+//         if (!contains(squares, pair))
+//         {
+//             outputArray.push(pair);
+//         }
+//     }
+
+//     return outputArray;
+// };
+tetromino.prototype.convertToAbs = function(arrayOfPairs)
+{
+    var absPairs = [];
+    for (var pair in arrayOfPairs)
+    {
+        absPairs.push([arrayOfPairs[pair][0] + this.x, arrayOfPairs[pair][1] + this.y]);
+    }
+    return absPairs;
 };
 tetromino.prototype.hashKey = function()
 {
     return getObjectClass(this) + "-" + this.id;
+};
+tetromino.prototype.toString = function()
+{
+    return "{tetromino " + getObjectClass(this) + " at (" + this.x + "," + this.y + ") with rotation " + this.rotation + "}";
 };
 
 tLLeft.prototype = new tetromino();
@@ -285,6 +407,48 @@ surface.prototype.actualCoord = function(pair)
 
     return pair;
 };
+// This function flood fills the grid from an empty starting coordinate and returns a set
+// of the empty coordinates that are part of that flood fill.
+// TODO: horribly inefficient, optimize
+surface.prototype.floodFill = function(startingPair, additionalPairs)
+{
+    var traversedPairs = {};
+    var emptyPairs = {};
+
+    var currentPairsToExamine = [startingPair];
+
+    while (currentPairsToExamine.length > 0)
+    {
+        var currentPair = currentPairsToExamine.pop();
+
+        if (!traversedPairs[currentPair])
+        {
+            var pairIsNotOnGrid = (!this.grid[currentPair] && !contains(additionalPairs, currentPair));
+            var pairIsWithinBounds = (currentPair[0] >= 0 && currentPair[0] < this.width &&
+                                      currentPair[1] >= 0 && currentPair[1] < this.height);
+
+            // test if empty, and only proceed if it is
+            if (pairIsNotOnGrid && pairIsWithinBounds)
+            {
+                emptyPairs[currentPair] = true;
+
+                var diffArray = [-1, 1];
+                for (var xIndex in diffArray)
+                {
+                    for (var yIndex in diffArray)
+                    {
+                        var surroundingPairToTest = [currentPair[0]+diffArray[xIndex], currentPair[1]+diffArray[yIndex]];
+                        currentPairsToExamine.push(surroundingPairToTest);
+                    }
+                }
+            }
+
+            traversedPairs[currentPair] = true;
+        }
+    }
+
+    return emptyPairs;
+};
 surface.prototype.addTetromino = function(tetromino)
 {
     // wtf stop it what are you doing
@@ -295,12 +459,50 @@ surface.prototype.addTetromino = function(tetromino)
 
     var accepted = true;
 
-    var squares = tetromino.absSquares();
+    var squares = tetromino.convertToAbs(tetromino.squares());
+    var absAreaEmptySquares = tetromino.convertToAbs(tetromino.surroundingSquares());
+    pr("AREA EMPTY SQUARES: " + absAreaEmptySquares);
+
     for (var i in squares)
     {
         var pair = this.actualCoord(squares[i]);
 
-        if (this.grid[pair])
+        // oops! there's already a tetromino there
+        if (this.hasTetromino(pair))
+        {
+            accepted = false;
+            break;
+        }
+    }
+
+    for (var i in absAreaEmptySquares)
+    {
+        pair = absAreaEmptySquares[i];
+
+        if (this.hasTetromino(pair))
+        {
+            continue;
+        }
+
+        var offsets = [[-1, 0], [0, -1], [1, 0], [0, 1]];
+        var numberFound = 0;
+        for (var i in offsets)
+        {
+            var offset = offsets[i];
+            var offsetPair = [pair[0] + offset[0], pair[1] + offset[1]];
+
+            if (this.hasTetromino(offsetPair) || contains(squares, offsetPair))
+            {
+                numberFound += 1;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        // oops! adding this tetromino will create empty, unreachable pockets
+        if (numberFound == offsets.length)
         {
             accepted = false;
             break;
@@ -340,8 +542,10 @@ surface.prototype.delTetromino = function(tetromino)
     delete this.tetrominos[tetromino.hashKey()];
     delete this.tetrominoObjects[tetromino.hashKey()];
 };
-surface.prototype.hasTetromino = function(pair)
+surface.prototype.hasTetromino = function(pair) // transforms the coordinate to enable roll-around
 {
+    pair = this.actualCoord(pair);
+
     if (this.grid[pair])
     {
         return true;
@@ -448,6 +652,10 @@ surface.prototype.drawTetromino = function(singleTileSize, offset, tetr)
 
     this._context.restore();
 };
+surface.prototype.clr = function()
+{
+    this._context.clearRect(0, 0, this._canvas.width, this._canvas.height);
+};
 surface.prototype.draw = function(offset, percentage)
 {
     offset = typeof offset !== 'undefined' ? offset : [0,0];
@@ -502,6 +710,7 @@ surface.prototype.loadSpritemap = function(path)
 function createNewTetrominoState(pair)
 {
     // this "struct" will be used to restore state when a match fails
+    // TODO: I should probably use recursion for this
     var tetrominoState =
     {
         randClasses : [tLLeft, tLRight, tZigLeft, tZigRight, tT, tLine, tSquare],
@@ -565,7 +774,7 @@ function addTetrominoState(tetrominoState, surface)
                 tetrominoState.tetr.x = x - xDiff;
                 tetrominoState.tetr.y = y - yDiff;
 
-                var absSquares = tetrominoState.tetr.absSquares();
+                var absSquares = tetrominoState.tetr.convertToAbs(tetrominoState.tetr.squares());
                 var passedCollisionTest = false;
 
                 for (var j in absSquares)
@@ -584,7 +793,7 @@ function addTetrominoState(tetrominoState, surface)
 
 function renderFinalImage(surface)
 {
-    // surface.draw();
+    surface.clr();
 
     var fraction = 0.25;
     var itemsPerRow = 1/fraction;
@@ -599,6 +808,12 @@ function renderFinalImage(surface)
         }
     }
 
+    // var i = itemsPerRow/2;
+    // var j = itemsPerRow/2;
+    // var multiplieri = itemsPerRow/2 + (fraction - i) + 1;
+    // var multiplierj = itemsPerRow/2 + (fraction - j) + 1;
+    // surface.draw([surface.width * multiplieri, surface.height * multiplierj], fraction);
+
     // surface.draw([surface.width * 0.5, surface.height * 0.5], 0.5);
     // surface.draw([surface.width * -0.5, surface.height * 0.5], 0.5);
     // surface.draw([surface.width * 1.5, surface.height * 0.5], 0.5);
@@ -612,68 +827,139 @@ function renderFinalImage(surface)
     // surface.draw([surface.width * 1.5, surface.height * -0.5], 0.5);
 };
 
-function main(seed)
+// I can't use yield in my version of JS, so I guess I have to do this
+function mainRunner(seed)
 {
     // one might think it's stupid to seed a random number generator with a
     // random number from that same generator... and yet... ehm... derr...
     // (seriously though, I needed a human-readable seed to print out)
     seed = typeof seed !== 'undefined' ? seed : (Math.floor(Math.random() * Number.MAX_VALUE));
-    mathSeed = Math.seedrandom(seed);
-    pr("Creating pattern with seed = " + mathSeed);
+    this.mathSeed = Math.seedrandom(seed);
+    pr("Creating pattern with seed = " + this.mathSeed);
 
-    var debugIter = 0;
-    var surf = new surface(8, 8);
-    surf.loadSpritemap("spritemap-dirty.png");
+    this.debugIter = 0;
+    this.surf = new surface(16, 16);
+    this.surf.loadSpritemap("spritemap.png");
 
-    var tetrominoStates = [];
-    var shouldCreateNew = true;
+    this.tetrominoStates = [];
+    this.shouldCreateNew = true;
 
-    for (var y = 0; y < surf.height; y += 1)
+    this.x = 0;
+    this.y = 0;
+};
+mainRunner.prototype.main = function()
+{
+    while (this.mainIter()) {}
+    renderFinalImage(this.surf);
+};
+mainRunner.prototype.mainIter = function(print=false)
+{
+    var retVal = this.mainIterHelper();
+    if (print)
     {
-        for (var x = 0; x < surf.width; x += 1)
+        renderFinalImage(this.surf);   
+    }
+    return retVal;
+};
+mainRunner.prototype.mainIterHelper = function()
+{
+    // this is a nested for loop unfurled into a stateful single iteration; oh yield, how I yearn for thee!
+    if (this.y < this.surf.height)
+    {
+        if (this.x < this.surf.width)
         {
-            if (surf.hasTetromino([x, y]))
+            if (this.surf.hasTetromino([this.x, this.y]))
             {
-                continue;
+                this.x += 1;
+                return this.mainIter();
             }
 
-            if (shouldCreateNew)
+            if (this.shouldCreateNew)
             {
                 // we're on a roll, keep going
-                tetrominoStates.push(createNewTetrominoState([x,y]));
+                this.tetrominoStates.push(createNewTetrominoState([this.x, this.y]));
             }
             else
             {
                 // we couldn't place the next tetromino piece, so backtrack
 
-                if (debugIter >= 500)
+                if (this.debugIter >= 1000)
                 {
                     // brute force is slow
                     pr("ERROR: hit iteration limit!");
-                    renderFinalImage(surf);
-                    return;
+                    return false;
                 }
 
-                tetrominoStates.pop();
+                var failedState = this.tetrominoStates.pop();
+                pr("FAILED with " + failedState.tetr);
 
-                var prevTetromino = tetrominoStates[tetrominoStates.length-1];
-                surf.delTetromino(prevTetromino.tetr);
+                var prevTetromino = this.tetrominoStates[this.tetrominoStates.length-1];
+                this.surf.delTetromino(prevTetromino.tetr);
                 prevTetromino.squarei += 1; // to move it forward one step
-                x = prevTetromino.gridX;
-                y = prevTetromino.gridY;
+                this.x = prevTetromino.gridX;
+                this.y = prevTetromino.gridY;
 
-                debugIter += 1;
+                this.debugIter += 1;
             }
 
-            var tetrominoState = tetrominoStates[tetrominoStates.length-1];
+            var tetrominoState = this.tetrominoStates[this.tetrominoStates.length-1];
 
             // proceed only if the add operation was successful
-            shouldCreateNew = addTetrominoState(tetrominoState, surf);
+            this.shouldCreateNew = addTetrominoState(tetrominoState, this.surf);
+
+            if (this.shouldCreateNew)
+            {
+                pr("PLACED with " + this.tetrominoStates[this.tetrominoStates.length-1].tetr);
+            }
+
+            this.x += 1;
+
+            return true;
+        }
+        else
+        {
+            this.x = 0;
+            this.y += 1;
+            return this.mainIter();
         }
     }
-
-    renderFinalImage(surf);
+    else
+    {
+        return false;
+    }
 };
 
-// TODO: fix seed
-main();
+if (true)
+{
+    var mr = new mainRunner();
+
+    document.onkeydown = function(event)
+    {
+        event = event || window.event;
+        switch(event.keyCode)
+        {
+            case 39:
+                pr("Right arrow pressed!");
+                mr.mainIter(true);
+                break;
+        }
+    };
+}
+else
+{
+    // TODO: fix seed
+    var mr = new mainRunner();
+    mr.main();
+}
+
+// Interesting seeds:
+// 3.3731420304401715e+307
+// 5.89213914154486e+307
+// 8.984008512770523e+307
+
+// algorithm steps:
+// 1. check every empty cell that touches the tetromino
+// 2. flood fill each of these cells -- does each flood fill have a number of tiles divisible by 4?
+//    (optimization: keep track of the giant empty space above and break early if flood fill hits it)
+// 3. if it doesn't, invalid! remove
+// 4. in case it doesn't work, ensure that backtracking algorithm is a-ok
