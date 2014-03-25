@@ -852,7 +852,7 @@ mainRunner.prototype.main = function()
     while (this.mainIter()) {}
     renderFinalImage(this.surf);
 };
-mainRunner.prototype.mainIter = function(print=false)
+mainRunner.prototype.mainIter = function(print)
 {
     var retVal = this.mainIterHelper();
     if (print)
